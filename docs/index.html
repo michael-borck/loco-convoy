@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LocoConvoy - Multi-GPU Parallelism on Consumer Hardware</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128666;</text></svg>">
+  <meta name="description" content="Multi-GPU parallelism research on consumer PCIe hardware. Load balancing, Mixture of Agents, and speculative decoding on secondhand GPUs. No NVLink required.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0a0b;
+      --bg-secondary: #111114;
+      --bg-card: #16161a;
+      --bg-card-hover: #1c1c21;
+      --text-primary: #e8e6e3;
+      --text-secondary: #9a9a9e;
+      --text-muted: #5e5e63;
+      --accent: #a855f7;
+      --accent-glow: rgba(168, 85, 247, 0.15);
+      --accent-secondary: #c084fc;
+      --green: #22c55e;
+      --green-dim: rgba(34, 197, 94, 0.12);
+      --border: #1e1e23;
+      --border-light: #2a2a30;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'DM Sans', -apple-system, sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Noise texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(10, 10, 11, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--text-primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-logo .loco { color: var(--accent); }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      align-items: center;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover { color: var(--text-primary); }
+
+    .hamburger {
+      display: none;
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8rem 2rem 4rem;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 10%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      animation: pulse 6s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+      50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+    }
+
+    .hero-badge {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--accent);
+      background: var(--accent-glow);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      padding: 0.4rem 1rem;
+      border-radius: 100px;
+      margin-bottom: 2rem;
+      position: relative;
+      letter-spacing: 0.05em;
+    }
+
+    .hero h1 {
+      font-family: var(--font-mono);
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 700;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .hero h1 .highlight { color: var(--accent); }
+
+    .hero .tagline {
+      font-size: clamp(1.1rem, 2.5vw, 1.35rem);
+      color: var(--text-secondary);
+      max-width: 680px;
+      margin-bottom: 2.5rem;
+      position: relative;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      position: relative;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.85rem 1.75rem;
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.25s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-secondary);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 30px rgba(168, 85, 247, 0.25);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-primary);
+      border: 1px solid var(--border-light);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--text-muted);
+      transform: translateY(-1px);
+    }
+
+    /* SECTIONS */
+    section {
+      padding: 6rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-family: var(--font-mono);
+      font-size: clamp(1.5rem, 3.5vw, 2.25rem);
+      font-weight: 700;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+
+    .section-desc {
+      color: var(--text-secondary);
+      max-width: 600px;
+      font-size: 1.05rem;
+      line-height: 1.7;
+      margin-bottom: 3rem;
+    }
+
+    /* RESEARCH CARDS */
+    .research-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+    }
+
+    .research-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .research-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .research-card:hover {
+      border-color: var(--border-light);
+      transform: translateY(-2px);
+    }
+
+    .research-card:hover::before { opacity: 1; }
+
+    .research-icon {
+      font-size: 1.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .research-card h3 {
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    .research-card p {
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    /* HARDWARE SECTION */
+    .hardware-section {
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 6rem 2rem;
+    }
+
+    .hardware-section .inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .hardware-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    .hw-card {
+      padding: 2rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg-primary);
+      transition: all 0.3s;
+    }
+
+    .hw-card:hover {
+      border-color: var(--border-light);
+    }
+
+    .hw-icon {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .hw-card h3 {
+      font-family: var(--font-mono);
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .hw-card .hw-subtitle {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--accent);
+      margin-bottom: 0.75rem;
+    }
+
+    .hw-card p {
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    .hw-specs {
+      margin-top: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .hw-spec-tag {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 100px;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid rgba(168, 85, 247, 0.2);
+    }
+
+    /* KEY INSIGHT */
+    .insight-section {
+      text-align: center;
+      padding: 5rem 2rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .insight-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 3rem 2.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .insight-box::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+
+    .insight-box blockquote {
+      font-size: 1.15rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+      font-style: italic;
+    }
+
+    .insight-box blockquote strong {
+      color: var(--text-primary);
+      font-style: normal;
+    }
+
+    /* CTA BOTTOM */
+    .cta-bottom {
+      text-align: center;
+      padding: 6rem 2rem 8rem;
+      position: relative;
+    }
+
+    .cta-bottom::before {
+      content: '';
+      position: absolute;
+      bottom: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 500px;
+      height: 300px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .cta-bottom h2 {
+      font-family: var(--font-mono);
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      margin-bottom: 1rem;
+      position: relative;
+    }
+
+    .cta-bottom p {
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      font-size: 1.05rem;
+      position: relative;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .cta-bottom .hero-actions {
+      justify-content: center;
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 2rem;
+      text-align: center;
+    }
+
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .footer-text {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover { color: var(--text-secondary); }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .hamburger { display: block; }
+
+      .nav-links.open {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: var(--bg-primary);
+        border-bottom: 1px solid var(--border);
+        padding: 1.5rem 2rem;
+        gap: 1rem;
+      }
+
+      .research-grid { grid-template-columns: 1fr; }
+      .hardware-grid { grid-template-columns: 1fr; }
+      .footer-inner { flex-direction: column; text-align: center; }
+    }
+
+    /* SCROLL ANIMATIONS */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="nav-logo">&#128666; <span class="loco">Loco</span>Convoy</a>
+    <button class="hamburger" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+    <ul class="nav-links">
+      <li><a href="#research">Research</a></li>
+      <li><a href="#hardware">Hardware</a></li>
+      <li><a href="#contact">Contact</a></li>
+      <li><a href="/docs/">Docs</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">LocoLab &middot; Multi-GPU Research &middot; No NVLink Required</div>
+    <h1><span class="highlight">Loco</span>Convoy</h1>
+    <p class="tagline">
+      Multi-GPU parallelism on consumer hardware. We're studying what happens when you connect multiple secondhand GPUs over plain PCIe and push them to work together. Load balancing, Mixture of Agents, speculative decoding &mdash; no NVLink, no datacenter, no excuses.
+    </p>
+    <div class="hero-actions">
+      <a href="/docs/" class="btn btn-primary">Read the Docs</a>
+      <a href="https://github.com/michael-borck/loco-convoy" class="btn btn-secondary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        View on GitHub
+      </a>
+    </div>
+  </section>
+
+  <!-- RESEARCH -->
+  <section id="research">
+    <div class="section-label fade-up">Research Areas</div>
+    <h2 class="section-title fade-up">Three strategies for consumer multi-GPU.</h2>
+    <p class="section-desc fade-up">
+      Datacenter GPUs have NVLink. We have PCIe and stubbornness. These are the three parallelism strategies we're measuring on real consumer hardware.
+    </p>
+    <div class="research-grid">
+      <div class="research-card fade-up">
+        <div class="research-icon">&#9878;</div>
+        <h3>Load Balancing</h3>
+        <p>Run independent model instances across separate GPUs to serve concurrent users. Each card operates alone &mdash; no inter-GPU communication needed. Six GPUs means six simultaneous inference workers, ideal for classroom or small-team deployments.</p>
+      </div>
+      <div class="research-card fade-up">
+        <div class="research-icon">&#129309;</div>
+        <h3>Mixture of Agents</h3>
+        <p>Multiple specialist models collaborate on a single response, each running on its own GPU. Different models or quantisations contribute distinct perspectives without competing for the same VRAM pool. Consensus through diversity.</p>
+      </div>
+      <div class="research-card fade-up">
+        <div class="research-icon">&#9889;</div>
+        <h3>Speculative Decoding</h3>
+        <p>A small draft model on one GPU proposes tokens while a larger verification model on another GPU accepts or rejects them. Trades inter-GPU bandwidth for faster generation by reducing the number of full-model forward passes.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HARDWARE -->
+  <div class="hardware-section" id="hardware">
+    <div class="inner">
+      <div class="section-label fade-up">Hardware</div>
+      <h2 class="section-title fade-up">Built from what others discarded.</h2>
+      <p class="section-desc fade-up">
+        Our test rigs are assembled from secondhand components &mdash; mining motherboards, ex-gaming GPUs, and repurposed chassis. The research question is what this hardware can actually do, measured rigorously rather than assumed.
+      </p>
+      <div class="hardware-grid">
+        <div class="hw-card fade-up">
+          <div class="hw-icon">&#9875;</div>
+          <h3>Tortuga</h3>
+          <div class="hw-subtitle">ASUS B250 Mining Expert</div>
+          <p>A motherboard with 19 PCIe slots, originally designed for cryptocurrency mining. Repurposed for multi-GPU inference research, providing the slot density to test scaling behaviour across many consumer GPUs simultaneously.</p>
+          <div class="hw-specs">
+            <span class="hw-spec-tag">19x PCIe</span>
+            <span class="hw-spec-tag">LGA 1151</span>
+            <span class="hw-spec-tag">ATX</span>
+          </div>
+        </div>
+        <div class="hw-card fade-up">
+          <div class="hw-icon">&#127855;</div>
+          <h3>Colmena</h3>
+          <div class="hw-subtitle">WEIHO 8-GPU Chassis</div>
+          <p>A compact, purpose-built enclosure running up to eight consumer GPUs. Populated with RTX 2060 Supers &mdash; 8 GB VRAM and 448 GB/s memory bandwidth per card, sourced secondhand for roughly $150&ndash;200 AUD each.</p>
+          <div class="hw-specs">
+            <span class="hw-spec-tag">8x GPU slots</span>
+            <span class="hw-spec-tag">RTX 2060 Super</span>
+            <span class="hw-spec-tag">448 GB/s per card</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KEY INSIGHT -->
+  <div class="insight-section fade-up">
+    <div class="insight-box">
+      <blockquote>
+        <strong>The value of many cheap GPUs depends entirely on whether you need one big model or many small ones.</strong> For pooled VRAM, fewer cards in proper PCIe slots wins. For concurrent independent inference, more cards wins regardless of slot bandwidth.
+      </blockquote>
+    </div>
+  </div>
+
+  <!-- CONTACT / CTA -->
+  <section class="cta-bottom" id="contact">
+    <h2 class="section-title fade-up">Part of LocoLab.</h2>
+    <p class="fade-up">
+      LocoConvoy is a research project from <strong>LocoLab</strong>, the applied AI research lab at <strong>Curtin University</strong>. We study what consumer hardware can do when you stop assuming it can't.
+    </p>
+    <div class="hero-actions fade-up">
+      <a href="mailto:michael.borck@curtin.edu.au" class="btn btn-primary">Get in Touch</a>
+      <a href="https://locolabo.org" class="btn btn-secondary">LocoLab Home</a>
+      <a href="https://locollm.org" class="btn btn-secondary">LocoLLM</a>
+      <a href="https://locobench.org" class="btn btn-secondary">LocoBench</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <span class="footer-text">&#128666; LocoConvoy &middot; Part of LocoLab &middot; Curtin University</span>
+      <ul class="footer-links">
+        <li><a href="https://github.com/michael-borck/loco-convoy">GitHub</a></li>
+        <li><a href="/docs/">Docs</a></li>
+        <li><a href="https://locolabo.org">LocoLab</a></li>
+        <li><a href="mailto:michael.borck@curtin.edu.au">Contact</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <!-- Scroll animation observer -->
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+  </script>
+</body>
+</html>
