@@ -25,11 +25,8 @@ A small draft model on one GPU proposes tokens while a larger verification model
 
 ## Hardware
 
-### Tortuga
-An **ASUS B250 Mining Expert** motherboard with **19 PCIe slots**. Originally designed for cryptocurrency mining, repurposed for multi-GPU inference research. Provides the slot density needed to test scaling behaviour across many cards.
-
 ### Colmena
-A **WEIHO 8-GPU chassis** -- a compact, purpose-built enclosure for running up to eight consumer GPUs. Currently populated with RTX 2060 Supers, which offer 8 GB VRAM and 448 GB/s memory bandwidth per card at a secondhand cost of roughly $150-200 AUD each.
+A **WEIHO 8-GPU enclosed chassis** -- eight native PCIe slots, no risers needed. Currently running RTX 2060 Super x3 and RTX 3060, with RTX 3090 and RTX 4060 Ti pending. The GPU lineup spans the meaningful VRAM tiers from 8 GB through 24 GB, enabling multi-GPU architecture experiments across load balancing, Mixture of Agents, and vLLM tensor parallelism.
 
 ## Philosophy
 
