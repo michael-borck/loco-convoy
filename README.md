@@ -2,44 +2,18 @@
 
 Documentation and experiments for running AI inference workloads across multiple GPUs.
 
-## Installation
+## Overview
 
-To get started with the project, follow these steps:
+This project explores strategies for distributing AI inference across multiple consumer-grade GPUs, including model parallelism, pipeline parallelism, and load balancing approaches.
 
-1. Clone the repository:
+## Guides
 
-```bash
-git clone https://github.com/michael-borck/loco-convoy.git
-```
+- [Multi-GPU AI Inference](multi-gpu-ai-inference.md)
+- [Multi-GPU Experiments](multi-gpu.md)
 
-2. Navigate to the project directory:
+## Documentation Site
 
-```bash
-cd loco-convoy
-```
-
-3. Install the dependencies:
-
-```bash
-npm install
-```
-
-## Usage
-
-The project includes several guides and experiments related to distributed AI inference:
-
-1. [Multi-GPU AI Inference](multi-gpu-ai-inference.md)
-2. [Multi-GPU Experiments](multi-gpu.md)
-
-These documents provide detailed information on how to set up and run AI inference workloads across multiple GPUs.
-
-## Configuration
-
-The project's configuration is managed through the `astro.config.mjs` file. This file contains settings related to the Astro static site generator, which is used to build the project's documentation.
-
-## API Documentation
-
-The project does not currently include an API. The focus is on providing documentation and experiments for distributed AI inference.
+The documentation is built and deployed automatically via GitHub Actions.
 
 ## License
 
