@@ -17,12 +17,6 @@ export default defineConfig({
       customCss: ['./src/styles/custom.css'],
       sidebar: [
         {
-          label: 'Overview',
-          items: [
-            { label: 'About LocoConvoy', slug: 'about' },
-          ],
-        },
-        {
           label: 'Research',
           items: [
             { label: 'Multi-GPU Inference on Consumer Hardware', slug: 'multi-gpu' },
