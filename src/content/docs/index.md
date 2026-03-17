@@ -29,7 +29,7 @@ Two WEIHO 8-GPU enclosed chassis -- eight native PCIe slots each, no risers need
 
 **Colmena** (always-on) -- RTX 2060 Super x3, RTX 3060, Tesla P100, with RTX 3090 and RTX 4060 Ti planned. Turing and Ampere cards with Tensor Cores. Handles load balancing, Mixture of Agents, vLLM tensor parallelism, and speculative decoding experiments.
 
-**Tortuga** (on-call) -- GTX 950, GTX 960, GTX 1050 Ti, GTX 1060 3 GB, GTX 1060 6 GB, GTX 980 Ti, GTX Titan X. Maxwell and Pascal cards without Tensor Cores. Provides the control group for the [tiered inference experiment](tiered-inference-experiment.md) -- matched GTX scaling to isolate what Tensor Cores actually contribute.
+**Tortuga** (on-call) -- GTX 950, GTX 960, GTX 1050 Ti, GTX 1060 3 GB, GTX 1060 6 GB x3, GTX 980 Ti, GTX Titan X. Maxwell and Pascal cards without Tensor Cores. Provides the control group for the [tiered inference experiment](tiered-inference-experiment.md) -- matched GTX scaling to isolate what Tensor Cores actually contribute.
 
 ## Philosophy
 

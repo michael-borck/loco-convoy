@@ -42,7 +42,7 @@ All cards from Tortuga. Pascal architecture, CUDA cores only.
 | A2 | 2x GTX 1060 6 GB | 12 GB | 192 GB/s each |
 | A3 | 3x GTX 1060 6 GB | 18 GB | 192 GB/s each |
 
-*Note: Tortuga has one GTX 1060 6 GB. A3 requires sourcing two additional matched cards (~$50-80 AUD each secondhand). A2 requires one additional card.*
+*Tortuga has three GTX 1060 6 GB cards. All configurations are available without additional acquisition.*
 
 ### Track B -- RTX (Tensor Cores)
 
@@ -105,9 +105,7 @@ The most informative comparisons isolate one variable at a time:
 
 ## Hardware Availability
 
-Track B is ready to run -- Colmena has three RTX 2060 Supers installed. Track A requires additional GTX 1060 6 GB cards for the two-card and three-card configurations. These are available secondhand for $50-80 AUD each. The Titan X control (C2) is already in Tortuga. The RTX 3090 control (C1) is a planned Colmena acquisition.
-
-Track B can begin immediately. Track A begins after sourcing additional GTX 1060 6 GB cards.
+Both tracks are ready to run. Colmena has three RTX 2060 Supers installed. Tortuga has three GTX 1060 6 GB cards. The Titan X control (C2) is already in Tortuga. The RTX 3090 control (C1) is a planned Colmena acquisition.
 
 ---
 
