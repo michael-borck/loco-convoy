@@ -20,6 +20,7 @@ export default defineConfig({
           label: 'Research',
           items: [
             { label: 'Multi-GPU Inference on Consumer Hardware', slug: 'multi-gpu' },
+            { label: 'Tiered Inference: VRAM vs Architecture', slug: 'tiered-inference-experiment' },
             { label: 'Multi-GPU AI Inference Guide', slug: 'multi-gpu-ai-inference' },
           ],
         },
