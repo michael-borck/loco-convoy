@@ -25,8 +25,11 @@ A small draft model on one GPU proposes tokens while a larger verification model
 
 ## Hardware
 
-### Colmena
-A **WEIHO 8-GPU enclosed chassis** -- eight native PCIe slots, no risers needed. Currently running RTX 2060 Super x3 and RTX 3060, with RTX 3090 and RTX 4060 Ti pending. The GPU lineup spans the meaningful VRAM tiers from 8 GB through 24 GB, enabling multi-GPU architecture experiments across load balancing, Mixture of Agents, and vLLM tensor parallelism.
+Two WEIHO 8-GPU enclosed chassis -- eight native PCIe slots each, no risers needed. Between them, every multi-GPU experiment configuration the project requires.
+
+**Colmena** (always-on) -- RTX 2060 Super x3, RTX 3060, Tesla P100, with RTX 3090 and RTX 4060 Ti planned. Turing and Ampere cards with Tensor Cores. Handles load balancing, Mixture of Agents, vLLM tensor parallelism, and speculative decoding experiments.
+
+**Tortuga** (on-call) -- GTX 950, GTX 960, GTX 1050 Ti, GTX 1060 3 GB, GTX 1060 6 GB, GTX 980 Ti, GTX Titan X. Maxwell and Pascal cards without Tensor Cores. Provides the control group for the [tiered inference experiment](tiered-inference-experiment.md) -- matched GTX scaling to isolate what Tensor Cores actually contribute.
 
 ## Philosophy
 
