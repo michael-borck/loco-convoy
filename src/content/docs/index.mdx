@@ -1,0 +1,33 @@
+---
+title: LocoConvoy
+description: Multi-GPU parallelism on consumer PCIe hardware. No NVLink. No enterprise interconnects. Just PCIe and persistence.
+template: splash
+hero:
+  tagline: Can multiple cheap consumer GPUs deliver real AI performance?
+  actions:
+    - text: Read the Research
+      link: /docs/multi-gpu/
+      icon: right-arrow
+      variant: primary
+    - text: Inference Guide
+      link: /docs/multi-gpu-ai-inference/
+      icon: external
+      variant: secondary
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+<CardGrid stagger>
+  <Card title="Load balancing" icon="bars">
+    Multiple independent model instances across separate GPUs serve concurrent users with no PCIe bottleneck. Six GPUs means six simultaneous workers.
+  </Card>
+  <Card title="Mixture of agents" icon="puzzle">
+    Different specialist models collaborate on a single response, each running on its own GPU — without competing for the same VRAM pool.
+  </Card>
+  <Card title="Speculative decoding" icon="forward-slash">
+    A small draft model proposes tokens; a larger model verifies them. Trades inter-GPU bandwidth for faster generation by reducing full-model forward passes.
+  </Card>
+  <Card title="PCIe reality check" icon="approve-check">
+    Datacenter multi-GPU uses NVLink at hundreds of GB/s. Consumer PCIe tops out at ~32 GB/s. LocoConvoy measures what that penalty actually costs — and when it doesn't matter.
+  </Card>
+</CardGrid>
