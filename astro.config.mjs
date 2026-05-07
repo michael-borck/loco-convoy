@@ -9,6 +9,7 @@ export default defineConfig({
       title: 'LocoConvoy',
       description: 'Multi-GPU parallelism research on consumer PCIe hardware',
       favicon: '/favicon.svg',
+      disable404Route: true,
       logo: {
         alt: 'LocoConvoy',
         src: './src/assets/convoy.svg',
