@@ -143,7 +143,7 @@ This is less than a single RTX 3090 (24 GB, ~$800-1000 AUD). But the 48 GB figur
 
 - Load balancing across multiple concurrent users
 - Mixture-of-Agents (MoA) architectures where multiple models contribute to a response
-- Batch evaluation (e.g., running LocoBench across six models in parallel)
+- Batch evaluation (e.g., running LocoBanco across six models in parallel)
 - A/B testing different models or quantisation levels side by side
 
 Six concurrent 7B inference workers for under $1000 AUD is remarkable value. The PCIe x1 riser limitation is irrelevant when each card runs independently.
@@ -347,7 +347,7 @@ Given the existing 3x RTX 2060 Super inventory plus a research focus on cost-eff
 
 5. **PCIe slot planning matters** -- ensure all three (or four) cards are in x8 or x16 electrical slots. A card in a x4 slot will bottleneck inter-GPU data transfer under pipeline parallelism, effectively wasting bandwidth.
 
-6. **For LocoBench benchmarking** -- the 2060 Super's profile (high bandwidth, modest compute, older CUDA) makes it a genuinely interesting reference point for research on cost-optimised inference hardware. It represents a class of GPU that is abundant, cheap, and frequently overlooked in the literature.
+6. **For LocoBanco benchmarking** -- the 2060 Super's profile (high bandwidth, modest compute, older CUDA) makes it a genuinely interesting reference point for research on cost-optimised inference hardware. It represents a class of GPU that is abundant, cheap, and frequently overlooked in the literature.
 
 ---
 

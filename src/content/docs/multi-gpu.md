@@ -3,7 +3,7 @@ title: "Multi-GPU Inference on Consumer Hardware"
 ---
 
 :::note[Future Spinoff]
-This experiment is tracked as a potential standalone project or as a future loco-bench tier extension (e.g., `--tier pooled-16gb`). Multi-GPU pooling represents a natural extension of the single-card VRAM tier framework.
+This experiment is tracked as a potential standalone project or as a future loco-banco tier extension (e.g., `--tier pooled-16gb`). Multi-GPU pooling represents a natural extension of the single-card VRAM tier framework.
 :::
 
 A proposed experiment to measure the real-world throughput of splitting LLM inference across multiple consumer GPUs, and to determine whether pooled VRAM meaningfully compensates for the bandwidth penalty of PCIe interconnect.
@@ -59,7 +59,7 @@ Colmena already has three RTX 2060 Supers. Two-card and three-card configuration
 
 ### What to Measure
 
-For each configuration, run loco-bench's standard prompt set and record:
+For each configuration, run loco-banco's standard prompt set and record:
 
 - Token generation rate (t/s) -- primary metric
 - Time to first token -- captures the synchronisation overhead at prompt processing
@@ -92,7 +92,7 @@ The core question for a reader with two modest cards is: should I run them toget
 
 The answer depends on the model. For a model that fits comfortably in a single card's VRAM, splitting across two cards adds interconnect overhead for no benefit -- single card will be faster. For a model that does not fit in a single card but fits in the pooled total, splitting is the only option that avoids system RAM offload, which is dramatically slower than either configuration.
 
-The interesting threshold is the model that *just barely* fits in a single card versus the same model running split across two cards with comfortable headroom. Does comfortable headroom on a split configuration outperform tight-fit on a single card? That is a question loco-bench can answer with existing hardware.
+The interesting threshold is the model that *just barely* fits in a single card versus the same model running split across two cards with comfortable headroom. Does comfortable headroom on a split configuration outperform tight-fit on a single card? That is a question loco-banco can answer with existing hardware.
 
 ---
 
@@ -114,4 +114,4 @@ The results will also inform whether multi-GPU deserves its own tier in Colmena'
 
 ---
 
-*Part of the [LocoConvoy](https://github.com/michael-borck/loco-convoy) project. Related: [LocoBench](https://github.com/michael-borck/loco-bench), [LocoLLM](https://github.com/michael-borck/loco-llm).*
+*Part of the [LocoConvoy](https://github.com/michael-borck/loco-convoy) project. Related: [LocoBanco](https://github.com/michael-borck/loco-banco), [LocoLLM](https://github.com/michael-borck/loco-llm).*

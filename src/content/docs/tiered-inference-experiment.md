@@ -75,7 +75,7 @@ C1 compares 3x RTX 2060 Super (24 GB pooled, 448 GB/s per card) against RTX 3090
   - CPU offload percentage (if any layers spill to system RAM)
   - PCIe bandwidth utilisation
 - **Control variables:** Same host machine per track (Colmena for Track B, Tortuga for Track A), same prompt set, same context length, same quantisation per run
-- **Benchmark harness:** LocoBench standard harness for consistent logging and reproducibility
+- **Benchmark harness:** LocoBanco standard harness for consistent logging and reproducibility
 
 ### Cross-Track Comparison Points
 
@@ -117,4 +117,4 @@ The cross-architecture comparison provides baseline data that does not exist in 
 
 ---
 
-*Part of the [LocoConvoy](https://github.com/michael-borck/loco-convoy) project. Related: [Multi-GPU Inference Pooling](multi-gpu.md), [LocoBench](https://locobench.org), [LocoLab](https://locolabo.org).*
+*Part of the [LocoConvoy](https://github.com/michael-borck/loco-convoy) project. Related: [Multi-GPU Inference Pooling](multi-gpu.md), [LocoBanco](https://locobanco.org), [LocoLabo](https://locolabo.org).*

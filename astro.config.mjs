@@ -16,7 +16,7 @@ export default defineConfig({
       },
       social: [
         { icon: 'external', label: 'Home', href: 'https://lococonvoy.org' },
-        { icon: 'external', label: 'LocoLab', href: 'https://locolabo.org' },
+        { icon: 'external', label: 'LocoLabo', href: 'https://locolabo.org' },
         { icon: 'github', label: 'GitHub', href: 'https://github.com/michael-borck/loco-convoy' },
       ],
       customCss: ['./src/styles/custom.css'],
@@ -33,8 +33,8 @@ export default defineConfig({
           label: 'Related Projects',
           items: [
             { label: 'LocoLLM', link: 'https://locollm.org' },
-            { label: 'LocoBench', link: 'https://locobench.org' },
-            { label: 'LocoLab', link: 'https://locolabo.org' },
+            { label: 'LocoBanco', link: 'https://locobanco.org' },
+            { label: 'LocoLabo', link: 'https://locolabo.org' },
           ],
         },
       ],
