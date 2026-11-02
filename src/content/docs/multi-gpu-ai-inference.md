@@ -4,8 +4,6 @@ title: "Multi-GPU AI Inference: A Practical Guide"
 
 ### Local LLM Hardware, VRAM Pooling, and the Cost-Effectiveness Question
 
----
-
 ## 1. Why Multiple GPUs for Local LLM Inference?
 
 The single biggest constraint in running large language models locally is **VRAM** (Video RAM). A model's minimum VRAM requirement is roughly:
@@ -17,11 +15,9 @@ So a 7B parameter model at 4-bit quantization needs roughly **4 GB**, a 13B mode
 Multi-GPU setups solve this in one of two ways:
 
 - **Running bigger models** than any single card could hold (VRAM pooling)
-- **Running faster inference** by parallelising the compute across cards (though gains are more nuanced -- see Section 3)
+- **Running faster inference** by parallelising the compute across cards (though gains are more nuanced; see Section 3)
 
 For most home lab and research users, the first goal is the dominant reason to go multi-GPU.
-
----
 
 ## 2. How Inference Engines Split Models Across GPUs
 
@@ -39,11 +35,11 @@ GPU 0: layers 1-12   ->   GPU 1: layers 13-24   ->   GPU 2: layers 25-36
 
 Each token generated travels down the pipeline from card to card via your PCIe bus. Only one GPU is active at a time per token pass.
 
-**Implications:**
+Implications:
 - Identical GPUs: each stage takes the same time, no bottleneck between stages
 - Mixed GPUs: total throughput is limited by the slowest card's bandwidth
-- PCIe slot speed matters -- a card in a x4 slot starves even if the card itself is fast
-- Overall throughput does **not** scale linearly with GPU count; you're running a larger model, not a faster one
+- PCIe slot speed matters: a card in a x4 slot starves even if the card itself is fast
+- Overall throughput does **not** scale linearly with GPU count: the pipeline runs a larger model, so speed stays near that of a single card
 
 ### 2.2 Tensor Parallelism (Shared Math)
 
@@ -57,9 +53,9 @@ Layer N: GPU 0 computes left half | GPU 1 computes right half -- simultaneously
 Layer N+1: repeat
 ```
 
-**Implications:**
-- GPUs work in parallel -- genuine throughput gains are possible
-- Synchronisation overhead between cards adds latency -- requires fast interconnects (NVLink ideal, PCIe acceptable for same-generation cards)
+Implications:
+- GPUs work in parallel, so genuine throughput gains are possible
+- Synchronisation overhead between cards adds latency and requires fast interconnects (NVLink ideal, PCIe acceptable for same-generation cards)
 - Mixed-speed GPUs still bottleneck at the slower card per synchronisation step
 - Higher tokens/sec ceiling than pipeline parallelism on matched hardware
 
@@ -67,12 +63,10 @@ Layer N+1: repeat
 
 | Scenario | Recommended Approach |
 |---|---|
-| Just need the model to fit in VRAM | Pipeline parallelism (Ollama/llama.cpp) -- zero config |
+| Just need the model to fit in VRAM | Pipeline parallelism (Ollama/llama.cpp) - zero config |
 | Matched GPUs, want maximum t/s | Tensor parallelism via ExLlamaV2 |
-| Mixed GPU generations | Pipeline parallelism -- tensor parallelism's sync overhead punishes mixed speeds more |
+| Mixed GPU generations | Pipeline parallelism - tensor parallelism's sync overhead punishes mixed speeds more |
 | Fine-tuning | Neither; use a single fast GPU with bf16 support |
-
----
 
 ## 3. The RTX 2060 Super: An Underrated Inference Card
 
@@ -94,7 +88,7 @@ LLM inference is a **memory-bandwidth-bound** task. The rate at which weights ca
 | RTX 3090 | 24 GB | 384-bit | 936 GB/s | Ampere |
 | RTX 4090 | 24 GB | 384-bit | 1,008 GB/s | Ada |
 
-The 2060 Super's 256-bit bus gives it bandwidth parity with the 3060 Ti and 3070 -- cards that were released years later at much higher prices. The 4060 and 4060 Ti are significantly *slower* for inference despite being newer.
+The 2060 Super's 256-bit bus gives it bandwidth parity with the 3060 Ti and 3070, cards that were released years later at much higher prices. The 4060 and 4060 Ti are significantly *slower* for inference despite being newer.
 
 ### 3.2 Three RTX 2060 Supers: What You Actually Get
 
@@ -106,7 +100,7 @@ The 2060 Super's 256-bit bus gives it bandwidth parity with the 3060 Ti and 3070
 | Model size ceiling | ~20-22 GB usable (leaving headroom for KV cache) |
 | Comparable single-card VRAM | RTX 3090 / RTX 4090 |
 
-With 3x matched cards, the "weakest link" penalty disappears entirely -- every stage in the pipeline runs at the same rate.
+With 3x matched cards, the "weakest link" penalty disappears entirely: every stage in the pipeline runs at the same rate.
 
 ### 3.3 Expected Token Rates (Estimates)
 
@@ -123,7 +117,7 @@ These are approximate single-user inference figures for pipeline parallelism:
 | Command-R 35B | Q3_K_M | ~15 GB | 12-18 t/s |
 | Yi-34B | Q4_K_M | ~20 GB | 10-15 t/s |
 
-> **Verdict:** For a single-user research or teaching context, 10-20 t/s on a high-quality 34B model is entirely usable. Conversational feel begins around 8 t/s; anything above 15 t/s is comfortable.
+> For a single-user research or teaching context, 10-20 t/s on a high-quality 34B model is entirely usable. Conversational feel begins around 8 t/s; anything above 15 t/s is comfortable.
 
 ### 3.4 Scaling Up: The 6x GPU Chassis Option
 
@@ -132,32 +126,30 @@ A mining-style chassis (e.g., WEIHO 6-GPU) with six RTX 2060 Supers creates an i
 | Configuration | Cost (AUD, approx.) | Total VRAM | Architecture |
 |---|---|---|---|
 | 6x RTX 2060 Super | $600-700 secondhand | 48 GB | 6 independent 8 GB cards |
-| WEIHO chassis + PSU | ~$190 | -- | PCIe x1 risers |
-| **Total** | **~$800-900** | **48 GB** | -- |
+| WEIHO chassis + PSU | ~$190 | - | PCIe x1 risers |
+| **Total** | **~$800-900** | **48 GB** | - |
 
 This is less than a single RTX 3090 (24 GB, ~$800-1000 AUD). But the 48 GB figure is misleading without understanding two very different use modes:
 
-**Pooled VRAM (one large model split across cards):** Using llama.cpp `--tensor-split 1,1,1,1,1,1`, a single ~40 GB model can theoretically run across all six cards. However, mining chassis use **PCIe x1 riser cables**, which dramatically limit inter-GPU bandwidth compared to x8 or x16 slots. This makes layer splitting functional but slow -- each pipeline stage waits on the narrow PCIe x1 link to pass activations to the next card. For a single large model, a single RTX 3090 at 936 GB/s bandwidth will be significantly faster than six 2060 Supers connected by risers.
+**Pooled VRAM (one large model split across cards):** Using llama.cpp `--tensor-split 1,1,1,1,1,1`, a single ~40 GB model can theoretically run across all six cards. However, mining chassis use **PCIe x1 riser cables**, which dramatically limit inter-GPU bandwidth compared to x8 or x16 slots. This makes layer splitting functional but slow: each pipeline stage waits on the narrow PCIe x1 link to pass activations to the next card. For a single large model, a single RTX 3090 at 936 GB/s bandwidth will be significantly faster than six 2060 Supers connected by risers.
 
-**Independent workers (six separate models):** The compelling use case is running **six independent 7B model instances simultaneously** -- one per card, no cross-GPU communication needed. This is ideal for:
+**Independent workers (six separate models):** The main use case here is running **six independent 7B model instances simultaneously**, one per card, with no cross-GPU communication needed. This is ideal for:
 
 - Load balancing across multiple concurrent users
 - Mixture-of-Agents (MoA) architectures where multiple models contribute to a response
 - Batch evaluation (e.g., running LocoBanco across six models in parallel)
 - A/B testing different models or quantisation levels side by side
 
-Six concurrent 7B inference workers for under $1000 AUD is remarkable value. The PCIe x1 riser limitation is irrelevant when each card runs independently.
+Six concurrent 7B inference workers cost under $1000 AUD. The PCIe x1 riser limitation is irrelevant when each card runs independently.
 
-> **Key insight:** The value of many cheap GPUs depends entirely on whether you need one big model or many small ones. For pooled VRAM, fewer cards in proper PCIe slots wins. For concurrent independent inference, more cards wins regardless of slot bandwidth.
+> The value of many cheap GPUs depends on whether you need one big model or many small ones. For pooled VRAM, fewer cards in proper PCIe slots wins. For concurrent independent inference, more cards wins regardless of slot bandwidth.
 
 ### 3.5 Weaknesses to Know
 
-- **No native bf16 support** -- the Turing architecture pre-dates bfloat16. This effectively rules out fine-tuning modern LLMs on these cards (QLoRA via fp16 is possible but slower and less stable).
-- **Older CUDA cores** -- raw TFLOP compute is well behind Ampere/Ada for tasks that are compute-bound (batch inference, training).
-- **Thermal management** -- three or more cards running sustained inference in a single chassis needs airflow planning. Mining chassis have open-air designs that help, but power draw scales linearly (~75W per card under load).
-- **PCIe riser bandwidth** -- mining-style x1 risers work fine for independent inference but are a severe bottleneck for layer-split or tensor-split workloads. For pooled VRAM, cards in proper x8/x16 motherboard slots are strongly preferred.
-
----
+- **No native bf16 support:** the Turing architecture pre-dates bfloat16. This effectively rules out fine-tuning modern LLMs on these cards (QLoRA via fp16 is possible but slower and less stable).
+- **Older CUDA cores:** raw TFLOP compute is well behind Ampere/Ada for tasks that are compute-bound (batch inference, training).
+- **Thermal management:** three or more cards running sustained inference in a single chassis needs airflow planning. Mining chassis have open-air designs that help, but power draw scales linearly (~75W per card under load).
+- **PCIe riser bandwidth:** mining-style x1 risers work fine for independent inference but are a severe bottleneck for layer-split or tensor-split workloads. For pooled VRAM, cards in proper x8/x16 motherboard slots are strongly preferred.
 
 ## 4. Tooling Overview for Multi-GPU Setups
 
@@ -196,7 +188,7 @@ CUDA_VISIBLE_DEVICES=0,1,2 ollama run command-r   # ~15GB Q4 model, splits acros
 # Use PARAMETER num_gpu 999 in a Modelfile to push all layers to GPU
 ```
 
-> **Note:** Ollama's multi-GPU is layer splitting (pipeline parallelism), not true tensor parallelism. It is functionally VRAM pooling -- a model larger than one card's VRAM can run across multiple cards -- but with PCIe bandwidth overhead between stages. For benchmarking where you need precise control over the split, use llama.cpp directly.
+> Note: Ollama's multi-GPU is layer splitting (pipeline parallelism), not true tensor parallelism. It works as VRAM pooling, so a model larger than one card's VRAM can run across multiple cards, but with PCIe bandwidth overhead between stages. For benchmarking where you need precise control over the split, use llama.cpp directly.
 
 **For maximum performance (ExLlamaV2):**
 ```python
@@ -237,13 +229,11 @@ vLLM provides an OpenAI-compatible API, so any frontend (Open WebUI, etc.) can c
 
 TabbyAPI uses ExLlamaV2 under the hood with an OpenAI-compatible API. Lighter than vLLM, good multi-GPU support, designed for single-user local inference. A middle ground between Ollama's simplicity and vLLM's production features.
 
-> **Practical note:** These tools don't conflict -- you can have Ollama for quick single-card use, llama.cpp for benchmarking with precise control, and vLLM for multi-GPU serving, all on the same machine.
-
----
+> Practical note: These tools don't conflict. You can have Ollama for quick single-card use, llama.cpp for benchmarking with precise control, and vLLM for multi-GPU serving, all on the same machine.
 
 ## 5. The Apple Silicon Comparison
 
-Apple's M-series chips take a fundamentally different architectural approach. Rather than discrete VRAM on a GPU card, they use **unified memory** -- a single high-bandwidth memory pool shared between CPU, GPU, and Neural Engine. This has significant implications for LLM inference.
+Apple's M-series chips use **unified memory**, a single high-bandwidth memory pool shared between CPU, GPU, and Neural Engine, with no discrete VRAM on a GPU card. This has significant implications for LLM inference.
 
 ### 5.1 Apple Silicon Memory Bandwidth
 
@@ -260,7 +250,7 @@ Apple's M-series chips take a fundamentally different architectural approach. Ra
 
 ### 5.2 Single Machine vs. Multiple Macs
 
-A critical point often misunderstood: **multiple Mac Minis do not natively pool their unified memory** the way multi-GPU does on a single PC.
+**Multiple Mac Minis do not natively pool their unified memory** the way multi-GPU does on a single PC.
 
 Each Mac Mini is a fully independent computer. To run a model split across two or more Mac Minis, you need distributed inference via tools like:
 
@@ -291,9 +281,7 @@ This introduces network latency between nodes (even on 10GbE), which adds overhe
 | Mac Mini M4 Pro (48 GB) | 18-25 t/s | Better bandwidth; model fits cleanly |
 | Mac Studio M4 Max (128 GB) | 35-55 t/s | Comfortable headroom; fast |
 
-At the 34B model size, the 3x 2060 Super setup is genuinely competitive with a Mac Mini M4 Pro configuration costing 3-4x more -- and faster than a base Mac Mini M4.
-
----
+At the 34B model size, the 3x 2060 Super setup is competitive with a Mac Mini M4 Pro configuration costing 3-4x more, and faster than a base Mac Mini M4.
 
 ## 6. Cost-Effectiveness Analysis
 
@@ -318,18 +306,16 @@ A **4th 2060 Super** adds 8 GB of headroom (32 GB total) for a marginal cost, al
 - You need **more than 32 GB in a single logical device** without distributed inference complexity
 - You prioritise **power efficiency** (a Mac Mini M4 Pro idles at ~8W, a tri-GPU PC at ~150W baseline)
 - You want **macOS and the Apple ecosystem** for development
-- You are running **70B+ models regularly** -- this is where Mac Studio M4 Max/Ultra pulls significantly ahead
-- You need **silence** -- a three-GPU workstation is not quiet
+- You are running **70B+ models regularly**: this is where Mac Studio M4 Max/Ultra pulls significantly ahead
+- You need **silence**: a three-GPU workstation is not quiet
 
 ### 6.3 When the Multi-GPU PC Wins
 
-- **Budget is the primary constraint** -- $600 vs. $2,300+ for similar 34B performance
+- **Budget is the primary constraint**: $600 vs. $2,300+ for similar 34B performance
 - You already have a **compatible host machine** (the GPU cost dominates)
-- You want **flexibility** -- swap cards, add more, run CUDA-specific tools
+- You want **flexibility**: swap cards, add more, run CUDA-specific tools
 - You are comfortable with **Linux and CLI tooling**
 - You plan to **experiment with fine-tuning pipelines** eventually (you would add a bf16-capable card for that role)
-
----
 
 ## 7. Practical Recommendations
 
@@ -337,30 +323,26 @@ A **4th 2060 Super** adds 8 GB of headroom (32 GB total) for a marginal cost, al
 
 Given the existing 3x RTX 2060 Super inventory plus a research focus on cost-effective inference:
 
-1. **Run Ollama as the primary inference backend** -- zero-config multi-GPU pooling, REST API available for all frontends and custom scripts.
+1. **Run Ollama as the primary inference backend**: zero-config multi-GPU pooling, REST API available for all frontends and custom scripts.
 
-2. **Add ExLlamaV2 as a secondary path** for benchmarking -- EXL2 quantised models at 3.0-4.0 bpw on 34B give a meaningful t/s improvement over GGUF Q4 at the same VRAM footprint.
+2. **Add ExLlamaV2 as a secondary path** for benchmarking: EXL2 quantised models at 3.0-4.0 bpw on 34B give a meaningful t/s improvement over GGUF Q4 at the same VRAM footprint.
 
-3. **Target the 14B-22B sweet spot** rather than the absolute 34B ceiling. A Mistral 22B or Qwen2.5 14B at Q6_K will outperform a Yi-34B at Q3 in both quality and speed given your VRAM headroom.
+3. **Target the 14B-22B sweet spot.** A Mistral 22B or Qwen2.5 14B at Q6_K will outperform a Yi-34B at Q3 in both quality and speed given your VRAM headroom.
 
-4. **A fourth 2060 Super** is a worthwhile addition if available cheaply -- 32 GB enables running Llama 3 70B at IQ2_XS (~17 GB) with a decent context window.
+4. **A fourth 2060 Super** is a worthwhile addition if available cheaply: 32 GB enables running Llama 3 70B at IQ2_XS (~17 GB) with a decent context window.
 
-5. **PCIe slot planning matters** -- ensure all three (or four) cards are in x8 or x16 electrical slots. A card in a x4 slot will bottleneck inter-GPU data transfer under pipeline parallelism, effectively wasting bandwidth.
+5. **PCIe slot planning matters**: ensure all three (or four) cards are in x8 or x16 electrical slots. A card in a x4 slot will bottleneck inter-GPU data transfer under pipeline parallelism, effectively wasting bandwidth.
 
-6. **For LocoBanco benchmarking** -- the 2060 Super's profile (high bandwidth, modest compute, older CUDA) makes it a genuinely interesting reference point for research on cost-optimised inference hardware. It represents a class of GPU that is abundant, cheap, and frequently overlooked in the literature.
-
----
+6. **For LocoBanco benchmarking**: the 2060 Super's profile (high bandwidth, modest compute, older CUDA) makes it an interesting reference point for research on cost-optimised inference hardware. It is a class of GPU that is abundant, cheap, and frequently overlooked in the literature.
 
 ## 8. Summary
 
-Multi-GPU inference is primarily a **VRAM expansion strategy**, not a speed multiplication strategy. Pipeline parallelism (the default in Ollama and llama.cpp) lets you run models that would not otherwise fit, at roughly the throughput of a single card. Tensor parallelism (ExLlamaV2, vLLM) on matched hardware can deliver genuine speed gains but requires more configuration.
+Multi-GPU inference is mainly a way to expand VRAM. It does not multiply speed. Pipeline parallelism (the default in Ollama and llama.cpp) lets you run models that would not otherwise fit, at roughly the throughput of a single card. Tensor parallelism (ExLlamaV2, vLLM) on matched hardware can deliver genuine speed gains but requires more configuration.
 
-The RTX 2060 Super is an excellent inference card hiding in plain sight -- its 256-bit bus and 448 GB/s bandwidth outperform most mid-tier Ampere and Ada cards for single-user LLM workloads. Three of them for under $700 AUD gives 24 GB of pooled VRAM and usable performance on 34B-class models.
+The RTX 2060 Super is an excellent inference card that gets overlooked. Its 256-bit bus and 448 GB/s bandwidth outperform most mid-tier Ampere and Ada cards for single-user LLM workloads. Three of them for under $700 AUD gives 24 GB of pooled VRAM and usable performance on 34B-class models.
 
-Apple Silicon's unified memory architecture offers a genuinely different value proposition: simpler setup, better per-GB quality at higher VRAM tiers, lower power consumption, but at a significant cost premium. For a research lab budget, the multi-GPU PC approach delivers strong capability per dollar -- particularly if the host machine already exists.
+Apple Silicon's unified memory architecture has real advantages: simpler setup, better per-GB quality at higher VRAM tiers, and lower power consumption, at a significant cost premium. For a research lab budget, the multi-GPU PC approach delivers strong capability per dollar, particularly if the host machine already exists.
 
-The Mac Mini cluster idea ("stacking" M4 or M5 Minis) is often discussed but rarely practical for inference: it requires distributed inference software, introduces network latency between nodes, and the memory pools are not additive in the same seamless way as multi-GPU on a single PCIe bus. A single well-specced Mac Studio M4 Max is a better investment than two Mac Minis for inference purposes.
-
----
+The Mac Mini cluster idea ("stacking" M4 or M5 Minis) is often discussed but rarely practical for inference: it requires distributed inference software, introduces network latency between nodes, and the memory pools are not additive the way multi-GPU memory is on a single PCIe bus. A single well-specced Mac Studio M4 Max is a better investment than two Mac Minis for inference purposes.
 
 *Report compiled March 2026. GPU pricing reflects approximate AUD secondhand market. Token rate estimates are single-user, single-stream inference benchmarks and will vary by quantisation, context length, prompt complexity, and driver/software version.*

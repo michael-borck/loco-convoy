@@ -24,12 +24,12 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
     Multiple independent model instances across separate GPUs serve concurrent users with no PCIe bottleneck. Six GPUs means six simultaneous workers.
   </Card>
   <Card title="Mixture of agents" icon="puzzle">
-    Different specialist models collaborate on a single response, each running on its own GPU — without competing for the same VRAM pool.
+    Different specialist models collaborate on a single response, each running on its own GPU, without competing for the same VRAM pool.
   </Card>
   <Card title="Speculative decoding" icon="forward-slash">
     A small draft model proposes tokens; a larger model verifies them. Trades inter-GPU bandwidth for faster generation by reducing full-model forward passes.
   </Card>
   <Card title="PCIe reality check" icon="approve-check">
-    Datacenter multi-GPU uses NVLink at hundreds of GB/s. Consumer PCIe tops out at ~32 GB/s. LocoConvoy measures what that penalty actually costs — and when it doesn't matter.
+    Datacenter multi-GPU uses NVLink at hundreds of GB/s. Consumer PCIe tops out at ~32 GB/s. LocoConvoy measures what that penalty costs, and when it doesn't matter.
   </Card>
 </CardGrid>
