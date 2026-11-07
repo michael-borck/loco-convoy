@@ -1,52 +1,35 @@
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
+import { loco } from '@locolabo/theme';
 
 export default defineConfig({
   site: 'https://lococonvoy.org',
   integrations: [
-    starlight({
-      title: 'LocoConvoy',
-      description: 'Multi-GPU parallelism research on consumer PCIe hardware',
-      favicon: '/favicon.svg',
-      disable404Route: true,
-      logo: {
-        alt: 'LocoConvoy',
-        src: './src/assets/convoy.svg',
-        replacesTitle: false,
-      },
-      social: [
-        { icon: 'external', label: 'Home', href: 'https://lococonvoy.org' },
-        { icon: 'external', label: 'LocoLabo', href: 'https://locolabo.org' },
-        { icon: 'github', label: 'GitHub', href: 'https://github.com/michael-borck/loco-convoy' },
-      ],
-      customCss: ['./src/styles/custom.css'],
-      sidebar: [
-        {
-          label: 'Research',
-          items: [
-            { label: 'Multi-GPU Inference on Consumer Hardware', slug: 'multi-gpu' },
-            { label: 'Tiered Inference: VRAM vs Architecture', slug: 'tiered-inference-experiment' },
-            { label: 'Multi-GPU AI Inference Guide', slug: 'multi-gpu-ai-inference' },
-          ],
+    starlight(
+      loco({
+        project: 'loco-convoy',
+        title: 'LocoConvoy',
+        description: 'Multi-GPU parallelism research on consumer PCIe hardware',
+        home: 'https://lococonvoy.org',
+        github: 'loco-convoy',
+        accent: { low: '#1a0a2e', main: '#a855f7', high: '#e9d5ff' },
+        favicon: '/favicon.svg',
+        logo: {
+          alt: 'LocoConvoy',
+          src: './src/assets/convoy.svg',
+          replacesTitle: false,
         },
-        {
-          label: 'LocoLabo Projects',
-          items: [
-            { label: 'All Projects', link: 'https://locolabo.org/projects/' },
-            { label: 'LocoLabo', link: 'https://locolabo.org' },
-            { label: 'LocoLLM', link: 'https://locollm.org' },
-            { label: 'LocoBanco', link: 'https://locobanco.org' },
-            { label: 'LocoBench Picker', link: 'https://picker.locobanco.org' },
-            { label: 'LocoFósil', link: 'https://locofosil.org' },
-            { label: 'LocoMusa', link: 'https://locomusa.org' },
-            { label: 'LocoAgente', link: 'https://locoagente.org' },
-            { label: 'LocoPuente', link: 'https://locopuente.org' },
-            { label: 'LocoEnsayo', link: 'https://locoensayo.org' },
-            { label: 'LocoNotas', link: 'https://loconotas.org' },
-            { label: 'LocoBase', link: 'https://github.com/michael-borck/loco-base' },
-          ],
-        },
-      ],
-    }),
+        sidebar: [
+          {
+            label: 'Research',
+            items: [
+              { label: 'Multi-GPU Inference on Consumer Hardware', slug: 'multi-gpu' },
+              { label: 'Tiered Inference: VRAM vs Architecture', slug: 'tiered-inference-experiment' },
+              { label: 'Multi-GPU AI Inference Guide', slug: 'multi-gpu-ai-inference' },
+            ],
+          },
+        ],
+      })
+    ),
   ],
 });
