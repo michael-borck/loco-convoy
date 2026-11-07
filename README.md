@@ -11,9 +11,9 @@ This project explores strategies for distributing AI inference across multiple c
 - [Multi-GPU AI Inference](multi-gpu-ai-inference.md)
 - [Multi-GPU Experiments](multi-gpu.md)
 
-## Documentation Site
+## Documentation site
 
-The documentation is built and deployed automatically via GitHub Actions.
+Live at [lococonvoy.org](https://lococonvoy.org). Built and deployed automatically via GitHub Actions.
 
 ## License
 
