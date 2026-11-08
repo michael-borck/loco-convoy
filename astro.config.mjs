@@ -13,10 +13,9 @@ export default defineConfig({
         home: 'https://lococonvoy.org',
         github: 'loco-convoy',
         accent: { low: '#1a0a2e', main: '#a855f7', high: '#e9d5ff' },
-        favicon: '/favicon.svg',
         logo: {
           alt: 'LocoConvoy',
-          src: './src/assets/convoy.svg',
+          src: './src/assets/art/icon.png',
           replacesTitle: false,
         },
         sidebar: [
