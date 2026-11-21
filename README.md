@@ -1,5 +1,9 @@
 # loco-convoy
 
+<p align="center">
+  <img src="src/assets/art/hero.webp" alt="loco-convoy" width="640">
+</p>
+
 Documentation and experiments for running AI inference workloads across multiple GPUs.
 
 ## Overview
